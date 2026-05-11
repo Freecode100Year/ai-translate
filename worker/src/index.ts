@@ -2,6 +2,7 @@ interface Env {
   TRANSLATOR: DurableObjectNamespace;
   DEEPGRAM_API_KEY: string;
   OPENAI_API_KEY: string;
+  ACCESS_PASSWORD: string;
 }
 
 const CORS = {
@@ -21,6 +22,10 @@ export default {
     if (url.pathname === '/ws') {
       if (request.headers.get('Upgrade') !== 'websocket') {
         return new Response('Expected WebSocket', { status: 426 });
+      }
+      const pwd = url.searchParams.get('pwd');
+      if (pwd !== env.ACCESS_PASSWORD) {
+        return new Response('Unauthorized', { status: 401, headers: CORS });
       }
       const id = env.TRANSLATOR.newUniqueId();
       return env.TRANSLATOR.get(id).fetch(request);

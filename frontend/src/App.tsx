@@ -1,4 +1,43 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, FormEvent } from 'react'
+
+function LoginScreen({ onLogin }: { onLogin: (pwd: string) => void }) {
+  const [pwd, setPwd] = useState('')
+  const [error, setError] = useState(false)
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    if (!pwd.trim()) {
+      setError(true)
+      return
+    }
+    setError(false)
+    onLogin(pwd.trim())
+  }
+
+  return (
+    <div className="h-dvh bg-gray-950 text-white flex flex-col items-center justify-center px-6">
+      <h1 className="text-2xl font-semibold mb-8">AI Translate</h1>
+      <form onSubmit={handleSubmit} className="w-full max-w-[16rem] space-y-4">
+        <input
+          type="password"
+          inputMode="numeric"
+          value={pwd}
+          onChange={(e) => setPwd(e.target.value)}
+          placeholder="Enter password"
+          autoFocus
+          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-center text-lg tracking-widest outline-none focus:border-blue-500 transition"
+        />
+        {error && <p className="text-red-400 text-sm text-center">Please enter password</p>}
+        <button
+          type="submit"
+          className="w-full bg-blue-500 hover:bg-blue-400 active:bg-blue-600 rounded-xl py-3 font-medium transition active:scale-95"
+        >
+          Login
+        </button>
+      </form>
+    </div>
+  )
+}
 
 const LANGUAGES = [
   { code: 'zh', name: '中文' },
@@ -24,6 +63,23 @@ interface Entry {
 }
 
 export default function App() {
+  const [password, setPassword] = useState(() => localStorage.getItem('ai_translate_pwd') || '')
+
+  if (!password) {
+    return (
+      <LoginScreen
+        onLogin={(pwd) => {
+          localStorage.setItem('ai_translate_pwd', pwd)
+          setPassword(pwd)
+        }}
+      />
+    )
+  }
+
+  return <TranslateApp password={password} onLogout={() => { localStorage.removeItem('ai_translate_pwd'); setPassword('') }} />
+}
+
+function TranslateApp({ password, onLogout }: { password: string; onLogout: () => void }) {
   const [langA, setLangA] = useState('zh')
   const [langB, setLangB] = useState('en')
   const [activeLang, setActiveLang] = useState<string | null>(null)
@@ -43,9 +99,13 @@ export default function App() {
   const gainRef = useRef<GainNode | null>(null)
   const ctxRef = useRef<AudioContext | null>(null)
 
-  const WS_URL =
-    import.meta.env.VITE_WS_URL ||
-    `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`
+  const WS_URL = (() => {
+    const base =
+      import.meta.env.VITE_WS_URL ||
+      `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`
+    const sep = base.includes('?') ? '&' : '?'
+    return `${base}${sep}pwd=${encodeURIComponent(password)}`
+  })()
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
@@ -194,7 +254,7 @@ export default function App() {
       ws.onmessage = onWsMessage
       ws.onerror = () => {
         setStatus('error')
-        setError('Connection failed')
+        setError('Connection failed — check password')
         pendingLang.current = null
       }
       ws.onclose = () => {
@@ -226,7 +286,10 @@ export default function App() {
     <div className="h-dvh bg-gray-950 text-white flex flex-col select-none">
       {/* Header */}
       <header className="shrink-0 flex items-center justify-between px-4 py-3 bg-gray-900/80 backdrop-blur border-b border-gray-800">
-        <h1 className="text-lg font-semibold tracking-tight">AI Translate</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-semibold tracking-tight">AI Translate</h1>
+          <button onClick={onLogout} className="text-xs text-gray-600 hover:text-gray-400 transition">Logout</button>
+        </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-gray-500">Vol</span>
