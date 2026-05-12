@@ -7,6 +7,9 @@ bindings = [
   { name = "TRANSLATOR", class_name = "TranslatorSession" }
 ]
 
+[ai]
+binding = "AI"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["TranslatorSession"]

@@ -1,8 +1,7 @@
 interface Env {
   TRANSLATOR: DurableObjectNamespace;
   DEEPGRAM_API_KEY: string;
-  OPENAI_API_KEY: string;
-  ACCESS_PASSWORD: string;
+  AI: any;
 }
 
 const CORS = {
@@ -23,16 +22,12 @@ export default {
       if (request.headers.get('Upgrade') !== 'websocket') {
         return new Response('Expected WebSocket', { status: 426 });
       }
-      const pwd = url.searchParams.get('pwd');
-      if (pwd !== env.ACCESS_PASSWORD) {
-        return new Response('Unauthorized', { status: 401, headers: CORS });
-      }
       const id = env.TRANSLATOR.newUniqueId();
       return env.TRANSLATOR.get(id).fetch(request);
     }
 
     if (url.pathname === '/health') {
-      return new Response(JSON.stringify({ status: 'ok', ts: Date.now() }), {
+      return new Response(JSON.stringify({ status: 'ok', ts: Date.now(), engine: 'workers-ai' }), {
         headers: { ...CORS, 'Content-Type': 'application/json' },
       });
     }
@@ -105,7 +100,10 @@ async function edgeTTS(text: string, lang: string, rate = '-5%'): Promise<ArrayB
   });
 
   const ws = resp.webSocket;
-  if (!ws) return null;
+  if (!ws) {
+    console.error(`Edge-TTS WebSocket upgrade failed: ${resp.status}`);
+    return null;
+  }
   ws.accept();
 
   const configMsg =
@@ -162,7 +160,7 @@ async function edgeTTS(text: string, lang: string, rate = '-5%'): Promise<ArrayB
     });
 
     ws.addEventListener('error', () => { clearTimeout(timeout); resolve(null); });
-    ws.addEventListener('close', () => { clearTimeout(timeout); });
+    ws.addEventListener('close', () => { clearTimeout(timeout); resolve(null); });
   });
 }
 
@@ -290,43 +288,25 @@ export class TranslatorSession {
       const audio = await edgeTTS(translated, this.targetLang);
       if (audio && this.client) {
         this.client.send(audio);
+      } else if (!audio) {
+        this.send({ type: 'error', message: 'TTS audio generation failed' });
       }
     } catch (e) {
-      this.send({ type: 'error', message: `Translation failed: ${e}` });
+      this.send({ type: 'error', message: `Translation/TTS failed: ${e}` });
     }
   }
 
   private async translate(text: string): Promise<string> {
-    const src = LANG_NAMES[this.speakingLang] || this.speakingLang;
-    const tgt = LANG_NAMES[this.targetLang] || this.targetLang;
-
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `Translate ${src} to ${tgt}. Output ONLY the translation, nothing else.`,
-          },
-          { role: 'user', content: text },
-        ],
-        max_tokens: 500,
-        temperature: 0.3,
-      }),
+    const response = await this.env.AI.run('@cf/meta/m2m100-1.2b', {
+      text,
+      source_lang: this.speakingLang,
+      target_lang: this.targetLang,
     });
 
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`OpenAI API ${res.status}: ${err}`);
+    if (response?.translated_text) {
+      return response.translated_text.trim();
     }
-
-    const json: any = await res.json();
-    return json.choices?.[0]?.message?.content?.trim() || text;
+    return text;
   }
 
   private send(data: object) {
