@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ai-translate-v1';
+const CACHE_NAME = 'ai-translate-v2';
 
 self.addEventListener('install', () => self.skipWaiting());
 
