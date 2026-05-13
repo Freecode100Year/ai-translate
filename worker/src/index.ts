@@ -50,10 +50,31 @@ const VOICES: Record<string, string> = {
   fr: 'fr-FR-DeniseNeural',
   de: 'de-DE-KatjaNeural',
   ru: 'ru-RU-SvetlanaNeural',
-  ar: 'ar-SA-ZariyahNeural',
   pt: 'pt-BR-FranciscaNeural',
   it: 'it-IT-ElsaNeural',
   th: 'th-TH-PremwadeeNeural',
+  vi: 'vi-VN-HoaiMyNeural',
+  pl: 'pl-PL-AgnieszkaNeural',
+  nl: 'nl-NL-ColetteNeural',
+  tr: 'tr-TR-EmelNeural',
+  sv: 'sv-SE-SofieNeural',
+  da: 'da-DK-ChristelNeural',
+  fi: 'fi-FI-NooraNeural',
+  no: 'nb-NO-PernilleNeural',
+  cs: 'cs-CZ-VlastaNeural',
+  el: 'el-GR-AthinaNeural',
+  hi: 'hi-IN-SwaraNeural',
+  hu: 'hu-HU-NoemiNeural',
+  id: 'id-ID-GadisNeural',
+  ms: 'ms-MY-YasminNeural',
+  ro: 'ro-RO-AlinaNeural',
+  sk: 'sk-SK-ViktoriaNeural',
+  bg: 'bg-BG-KalinaNeural',
+  ca: 'ca-ES-JoanaNeural',
+  et: 'et-EE-AnuNeural',
+  lv: 'lv-LV-EveritaNeural',
+  lt: 'lt-LT-OnaNeural',
+  uk: 'uk-UA-PolinaNeural',
 };
 
 function uuid(): string {
@@ -169,7 +190,13 @@ async function edgeTTS(text: string, lang: string, rate = '-5%'): Promise<ArrayB
 const LANG_NAMES: Record<string, string> = {
   zh: 'Chinese', en: 'English', ja: 'Japanese', ko: 'Korean',
   es: 'Spanish', fr: 'French', de: 'German', ru: 'Russian',
-  ar: 'Arabic', pt: 'Portuguese', it: 'Italian', th: 'Thai',
+  pt: 'Portuguese', it: 'Italian', th: 'Thai', vi: 'Vietnamese',
+  pl: 'Polish', nl: 'Dutch', tr: 'Turkish', sv: 'Swedish',
+  da: 'Danish', fi: 'Finnish', no: 'Norwegian', cs: 'Czech',
+  el: 'Greek', hi: 'Hindi', hu: 'Hungarian', id: 'Indonesian',
+  ms: 'Malay', ro: 'Romanian', sk: 'Slovak', bg: 'Bulgarian',
+  ca: 'Catalan', et: 'Estonian', lv: 'Latvian', lt: 'Lithuanian',
+  uk: 'Ukrainian',
 };
 
 export class TranslatorSession {
