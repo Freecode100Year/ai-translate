@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ai-translate-v2';
+const CACHE_NAME = 'ai-translate-v3';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -14,15 +14,14 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   if (e.request.url.includes('/ws')) return;
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      const fetched = fetch(e.request).then(resp => {
+    fetch(e.request)
+      .then(resp => {
         if (resp.ok) {
           const clone = resp.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
         }
         return resp;
-      });
-      return cached || fetched;
-    })
+      })
+      .catch(() => caches.match(e.request).then(cached => cached || new Response('Offline', { status: 503 })))
   );
 });
