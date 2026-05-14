@@ -57,6 +57,7 @@ export default function App() {
   const [entries, setEntries] = useState<Entry[]>([])
   const [error, setError] = useState('')
   const [volume, setVolume] = useState(3)
+  const [picking, setPicking] = useState<'A' | 'B' | null>(null)
 
   const wsRef = useRef<WebSocket | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
@@ -268,18 +269,13 @@ export default function App() {
 
       {/* Language selector */}
       <div className="shrink-0 flex items-center justify-center gap-3 px-4 py-2.5 bg-gray-900/40 border-b border-gray-800/50">
-        <select
-          value={langA}
-          onChange={(e) => setLangA(e.target.value)}
+        <button
+          onClick={() => !activeLang && setPicking('A')}
           disabled={!!activeLang}
-          className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm outline-none disabled:opacity-50"
+          className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-1.5 text-sm hover:bg-gray-700 transition disabled:opacity-50"
         >
-          {LANGUAGES.map((l) => (
-            <option key={l.code} value={l.code}>
-              {l.name}
-            </option>
-          ))}
-        </select>
+          {langName(langA)}
+        </button>
 
         <button
           onClick={swap}
@@ -289,19 +285,47 @@ export default function App() {
           ⇄
         </button>
 
-        <select
-          value={langB}
-          onChange={(e) => setLangB(e.target.value)}
+        <button
+          onClick={() => !activeLang && setPicking('B')}
           disabled={!!activeLang}
-          className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm outline-none disabled:opacity-50"
+          className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-1.5 text-sm hover:bg-gray-700 transition disabled:opacity-50"
         >
-          {LANGUAGES.map((l) => (
-            <option key={l.code} value={l.code}>
-              {l.name}
-            </option>
-          ))}
-        </select>
+          {langName(langB)}
+        </button>
       </div>
+
+      {/* Language picker modal */}
+      {picking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setPicking(null)}>
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl mx-4 p-4 max-w-md w-full max-h-[70vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-sm text-gray-400 mb-3 text-center">
+              {picking === 'A' ? 'Source language' : 'Target language'}
+            </h2>
+            <div className="grid grid-cols-3 gap-2">
+              {LANGUAGES.map((l) => {
+                const selected = picking === 'A' ? langA === l.code : langB === l.code
+                return (
+                  <button
+                    key={l.code}
+                    onClick={() => {
+                      if (picking === 'A') setLangA(l.code)
+                      else setLangB(l.code)
+                      setPicking(null)
+                    }}
+                    className={`px-2 py-2.5 rounded-xl text-sm transition-all ${
+                      selected
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    }`}
+                  >
+                    {l.name}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
